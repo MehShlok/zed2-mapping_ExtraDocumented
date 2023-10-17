@@ -50,41 +50,78 @@ import sys
 import pyzed.sl as sl
 from signal import signal, SIGINT
 
-cam = sl.Camera()
+cam = sl.Camera()     # Create a ZED camera object
 
+
+"""
+A simple sigint handler to stop recording when the user hits Ctrl-C
+"""
 def handler(signal_received, frame):
     cam.disable_recording()
     cam.close()
     sys.exit(0)
 
+"""
+Setup the signal handler
+"""
 signal(SIGINT, handler)
 
 def main():
     if not sys.argv or len(sys.argv) != 2:
         print("Only the path of the output SVO file should be passed as argument.")
         exit(1)
-
+    """
+        init is a variable of type sl.InitParameters. It defines the initialization parameters of the ZED camera.
+    """
     init = sl.InitParameters()
     init.camera_resolution = sl.RESOLUTION.HD720
     init.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Z_UP  # Use ROS-style coordinate system
     init.depth_mode = sl.DEPTH_MODE.NONE
 
     status = cam.open(init)
+    """
+        The camera has now been opened and initialized with 'init' . The above function returns 'ERROR_CODE.SUCCESS' if it
+        is sucessfully opened 
+    """
     if status != sl.ERROR_CODE.SUCCESS:
         print(repr(status))
         exit(1)
 
-    path_output = sys.argv[1]
+    path_output = sys.argv[1]   #simply the path of the output SVO file
+
     recording_param = sl.RecordingParameters(path_output, sl.SVO_COMPRESSION_MODE.H264)
+    """
+        RecordingParameters is a class that has the options used to record. 
+        Further Description: https://www.stereolabs.com/docs/api/python/classpyzed_1_1sl_1_1RecordingParameters.html#details
+    """
     err = cam.enable_recording(recording_param)
+    """
+        Creates an SVO file to be filled ... uses the parameters we defined in recording_param
+        The function returns an error code that can be checked using the ERROR_CODE class(?)
+        Further Description : https://www.stereolabs.com/docs/api/python/classpyzed_1_1sl_1_1Camera.html#a4e17c372d93750b60f3a45a49d7127d2
+    """
     if err != sl.ERROR_CODE.SUCCESS:
         print(repr(status))
         exit(1)
 
     runtime = sl.RuntimeParameters()
+    """
+        Class containing parameters that defines the behavior of sl.Camera.grab()
+        Further Description: https://www.stereolabs.com/docs/api/python/classpyzed_1_1sl_1_1RuntimeParameters.html
+
+    """
     print("SVO is Recording, use Ctrl-C to stop.")
     frames_recorded = 0
 
+    """
+        The following loop is used to record the SVO file.
+        The loop will run until the user presses Ctrl-C
+        sl.Camera.grab()
+        This method will grab the latest images from the camera, rectify them,
+        and compute the measurements based on the RuntimeParameters provided (depth, point cloud, tracking, etc.)
+        Further Description :https://www.stereolabs.com/docs/api/python/classpyzed_1_1sl_1_1RuntimeParameters.html#a54b1041e82c3484cd584cacf1f3becf4
+
+    """
     while True:
         if cam.grab(runtime) == sl.ERROR_CODE.SUCCESS :
             frames_recorded += 1
