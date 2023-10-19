@@ -45,7 +45,7 @@ python svo_recording.py svo_file.svo
 Use Ctrl-C to stop the recording.
 
 """
-
+#!/usr/bin/env python3 
 import sys
 import pyzed.sl as sl
 from signal import signal, SIGINT

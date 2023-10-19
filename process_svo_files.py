@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from zed_mapping.mapping import process_video_file
 import os
 from pathlib import Path
